@@ -36,16 +36,19 @@ class Program
     {
         Console.WriteLine("クライアントと接続");
     }
-
+    
     static void Server_ReceiveMessage(object sender, ReciveEventArgs e)
     {
         var message = e.message;
-        string mode = "sendfile";
-        if (mode == "") { mode = e.message; } //モードの判別準備
+        int mesleng = message.Length;
+        string mode = "";
+        if (mesleng > 6) mode = "sendfile";
+        else mode = "test";
+        if (mode == "") mode = e.message; //モードの判別準備
 
         if (mode == "test") //文字送受信モード
         {
-            Console.WriteLine(e.message);
+            Console.WriteLine(mode);
         }
         if (mode == "sendfile") //ファイル送信モード
         {
@@ -69,4 +72,3 @@ public class ReciveEventArgs : EventArgs
         this.message = message;
     }
 }
-
