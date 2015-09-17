@@ -90,7 +90,7 @@ public class Server
         }
     }
 
-    public static void Read()
+    public static void FileRead(string filename)
     {
         MemoryStream memoryStream = new MemoryStream();
         int size = 0;
@@ -122,7 +122,7 @@ public class Server
         byte[] file = new byte[bytes];
         file = memoryStream.ToArray();
         Console.WriteLine("書き込み開始");
-        Write(file , "sendfile.jpg");
+        Write(file , filename);
     }
 
     // クライアントにメッセージ送信
@@ -133,8 +133,7 @@ public class Server
             Console.WriteLine("Network is Not Connected");
             return;
         }
-        
-        message += "\n";
+
         byte[] bytes = encoding.GetBytes(message);
         stream.Write(bytes, 0, bytes.Length);
         Console.WriteLine(message);
@@ -162,6 +161,22 @@ public class Server
         memoryStream.Write(resBytes, 0, size);
         memoryStream.Close();
         return encoding.GetString(memoryStream.ToArray());
+    }
+
+    public static void UpdateList(string musicname, string username, string date)
+    {
+
+        string[] lines = File.ReadAllLines("List.lst");
+        int numb = lines.Length;
+        int No = numb / 3;
+        string number = No.ToString();
+        string lf = "\r\n";//改行コード   
+        string[] write = { musicname, username, date, number };
+        for (int cnt = 0; cnt < 4; cnt++)
+        {
+            File.AppendAllText(@"List.lst", write[cnt], encoding);//書き込み
+            File.AppendAllText(@"List.lst", lf, encoding);//改行
+        }
     }
 
     // 破棄
