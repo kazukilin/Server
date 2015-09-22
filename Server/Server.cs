@@ -20,7 +20,7 @@ public class Server
     static byte[] resBytes = new byte[256];
 
     static Thread thread;
-    static Encoding encoding = Encoding.UTF8;
+    public static Encoding encoding = Encoding.UTF8;
 
     public static event EventHandler ReciveStream;
     public static event EventHandler<ReciveEventArgs> ReceiveMessage;
@@ -90,32 +90,39 @@ public class Server
         }
     }
 
-    public static void FileRead(string filename)
+    public static void FileRead(string filename, int mode)
     {
         MemoryStream memoryStream = new MemoryStream();
         int size = 0;
         int resize = 0;
         int flag = 0;
         int cnt = 0;
-        while (true)
+        if (mode == 1)//大きなファイル転送専用(256byte~専用
         {
-            Console.WriteLine("受信中");
-            size = stream.Read(resBytes, 0, resBytes.Length);
-            if (size < 255 && cnt > 2) flag = 1;
-            Console.WriteLine("{0}回目", cnt);
-            resize = resize + size;
-            Console.WriteLine("{0}byte受信おわり",resize);
-            Console.WriteLine("memoryStreamに書き込み");
-            memoryStream.Write(resBytes, 0, size);
-            cnt++;
-            if (flag == 1)
+            while (true)
             {
-                Console.WriteLine("return");
-                break;
+                Console.WriteLine("受信中");
+                size = stream.Read(resBytes, 0, resBytes.Length);
+                if (size < 255 && cnt > 2) flag = 1;
+                resize = resize + size;
+                Console.WriteLine("{0}byte受信おわり", resize);
+                memoryStream.Write(resBytes, 0, size);
+                cnt++;
+                if (flag == 1)
+                {
+                    Console.WriteLine("return");
+                    break;
+                }
             }
         }
-        /*byte[]にそのまま入れる*/
-        Console.WriteLine("memoryStreamをClose");
+        if (mode == 0)//小さいファイル転送(~4096byte専用
+        {
+            byte[] recieve = new byte[4096];
+            Console.WriteLine("受信中");
+            size = stream.Read(recieve, 0, recieve.Length);
+            Console.WriteLine("受信終わり");
+            memoryStream.Write(recieve, 0, size);
+        }
         //ToArrayはMemoryStreamをCloseした時以外は正しく動作しない模様。
         memoryStream.Close();
         int bytes = 256 * cnt;
@@ -151,7 +158,6 @@ public class Server
         File.WriteAllBytes(filename , nakami);
         Console.WriteLine("書き込み終了。");
     }
-
     public static string ReadM()
     {
         MemoryStream memoryStream = new MemoryStream();

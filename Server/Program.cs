@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 class Program
 {
@@ -21,7 +22,11 @@ class Program
         {
             var cmd = Console.ReadLine();
 
-            if (cmd == "send") Server.WriteLine("test");
+            if (cmd == "sendtxt")
+            {
+                string sendtxt = Console.ReadLine();
+                Server.WriteLine("sendtxt" + sendtxt);
+            }
             if (cmd == "sendfile")
             {
                 Server.WriteLine("sendfile");
@@ -41,17 +46,32 @@ class Program
     static void Server_ReceiveMessage(object sender, ReciveEventArgs e)
     {
         var message = e.message;
+        //Console.WriteLine(message);
         int mesleng = message.Length;
-        string mode = "";
-        if (mode == "") mode = e.message; //モードの判別準備
-        Console.WriteLine(mode);
-        if (mode == "test") //文字送受信モード
+        string mode = e.message; //モードの判別準備
+
+        string sendmod = "";
+        string sendtxt = "";
+
+        if(message.Length > 7)
         {
-            Console.WriteLine(mode);
+            //int mesLength = message.Length;
+            sendmod = message.Substring(0, 7);//modeを出すため
+            sendtxt = message.Remove(0, 7);//文字列を出すため
+        }
+
+        string dlfilename = message.Remove(0, 2);
+        string dl = message.Substring(0, 2);
+        if (dl == "dl") mode = "dl";
+
+        //Console.WriteLine(mode);
+        if (sendmod == "sendtxt") //文字送受信モード
+        {
+            Console.WriteLine(sendtxt);
         }
         if (mode == "sendfile") //ファイル送信モード
         {
-            Server.FileRead("sendfile.jpg");
+            Server.FileRead("sendfile.jpg",1);//1 = 画像送受信
         }
         if (mode == "list")//リスト送信
         {
@@ -62,8 +82,8 @@ class Program
             string name = "";
             string username = "";
             string date = "";
-            Server.FileRead("meta.tmp");//METADATAを受信保存
-            StreamReader sr = new StreamReader(@"meta.tmp");
+            Server.FileRead("meta.tmp",0);//METADATAを受信保存a
+            StreamReader sr = new StreamReader(@"meta.tmp" , System.Text.Encoding.GetEncoding("shift-jis"));
             int cnt = 0;
             while (sr.Peek() > -1)//読み込み
             {
@@ -72,22 +92,44 @@ class Program
                 if(cnt == 2) date = sr.ReadLine();//3行目
                 cnt++;
             }
-            Console.WriteLine(name, username, date);
             string rename = name + ".meta";
+            sr.Close();
             File.Move("meta.tmp", rename);//ファイル名の書き換え
             string midi = name + ".midi";
-            Server.FileRead(midi);//MIDIファイル読み込み
+            Server.FileRead(midi,0);//MIDIファイル読み込み
             string unsi = name + ".data";
-            Server.FileRead(unsi);//運指ファイル読み込み
+            Server.FileRead(unsi,0);//運指ファイル読み込み
             //list更新
             Server.UpdateList(name, username, date);
         }
         if (mode == "dl")
         {
-            string filename = Server.ReadM();
-            Server.WriteFile(filename + ".meta");
-            Server.WriteFile(filename + ".midi");
-            Server.WriteFile(filename + ".data");
+            Console.WriteLine(dlfilename);
+
+            Thread.Sleep(500);
+            Server.WriteFile(dlfilename + ".meta");
+            Thread.Sleep(1000);//無効
+
+            Server.WriteFile(dlfilename + ".midi");
+            Console.WriteLine("midi書き込み終了");
+            Thread.Sleep(1000);//有効
+
+            Server.WriteFile(dlfilename + ".data");
+            Thread.Sleep(1000);//無効
+        
+            Server.WriteFile(dlfilename + ".data");
+            Thread.Sleep(1000);//有効
+
+            Server.WriteFile(dlfilename + ".data");
+            Console.WriteLine("data書き込み終了");
+            Thread.Sleep(2500);//
+
+            Server.WriteFile(dlfilename + ".meta");
+
+            Server.WriteFile(dlfilename + ".meta");
+            Console.WriteLine("meta書き込み終了");
+
+            Console.WriteLine("送信プロセス終了");
         }
 
     }
