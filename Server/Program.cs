@@ -17,7 +17,6 @@ class Program
 
         // サーバを起動
         Server.Start();
-
         while (true)
         {
             var cmd = Console.ReadLine();
@@ -46,7 +45,6 @@ class Program
     static void Server_ReceiveMessage(object sender, ReciveEventArgs e)
     {
         var message = e.message;
-        //Console.WriteLine(message);
         int mesleng = message.Length;
         string mode = e.message; //モードの判別準備
 
@@ -55,16 +53,14 @@ class Program
 
         if(message.Length > 7)
         {
-            //int mesLength = message.Length;
-            sendmod = message.Substring(0, 7);//modeを出すため
-            sendtxt = message.Remove(0, 7);//文字列を出すため
+            sendmod = message.Substring(0, 7);//sendtxtを出したい
+            sendtxt = message.Remove(0, 7);//受信したユーザー指定の文字列を出すため
         }
 
         string dlfilename = message.Remove(0, 2);
         string dl = message.Substring(0, 2);
         if (dl == "dl") mode = "dl";
 
-        //Console.WriteLine(mode);
         if (sendmod == "sendtxt") //文字送受信モード
         {
             Console.WriteLine(sendtxt);
@@ -75,14 +71,17 @@ class Program
         }
         if (mode == "list")//リスト送信
         {
+            Console.WriteLine("list");
             Server.WriteFile("List.lst");
+            Server.WriteFile("List.lst");//多分こうしないと送信してくれない
         }
         if (mode == "up")//MIDIMETA運指を受け取る
         {
+            int number;
             string name = "";
             string username = "";
             string date = "";
-            Server.FileRead("meta.tmp",0);//METADATAを受信保存a
+            Server.FileRead("meta.tmp",0);//METADATAを受信保存
             StreamReader sr = new StreamReader(@"meta.tmp" , System.Text.Encoding.GetEncoding("shift-jis"));
             int cnt = 0;
             while (sr.Peek() > -1)//読み込み
@@ -91,16 +90,18 @@ class Program
                 if(cnt == 1) username = sr.ReadLine();//2行目
                 if(cnt == 2) date = sr.ReadLine();//3行目
                 cnt++;
-            }
-            string rename = name + ".meta";
+            }//numberは通算番号
+            number = Server.UpdateList(name, username, date);
+            string rename = number + ".meta";
             sr.Close();
             File.Move("meta.tmp", rename);//ファイル名の書き換え
-            string midi = name + ".midi";
+            string midi = number + ".midi";
             Server.FileRead(midi,0);//MIDIファイル読み込み
-            string unsi = name + ".data";
+            string unsi = number + ".data";
             Server.FileRead(unsi,0);//運指ファイル読み込み
-            //list更新
-            Server.UpdateList(name, username, date);
+            /*Environment.Exit(0);
+            Console.WriteLine("OnDisconnect");
+            Server.Dispose();*/
         }
         if (mode == "dl")
         {
@@ -111,34 +112,40 @@ class Program
             Thread.Sleep(1000);//無効
 
             Server.WriteFile(dlfilename + ".midi");
-            Console.WriteLine("midi書き込み終了");
+            Console.WriteLine("midi finish");
             Thread.Sleep(1000);//有効
 
             Server.WriteFile(dlfilename + ".data");
             Thread.Sleep(1000);//無効
-        
+            
             Server.WriteFile(dlfilename + ".data");
             Thread.Sleep(1000);//有効
 
             Server.WriteFile(dlfilename + ".data");
-            Console.WriteLine("data書き込み終了");
+            Console.WriteLine("data finish");
             Thread.Sleep(2500);//
 
             Server.WriteFile(dlfilename + ".meta");
 
             Server.WriteFile(dlfilename + ".meta");
-            Console.WriteLine("meta書き込み終了");
+            Console.WriteLine("meta finish");
 
-            Console.WriteLine("送信プロセス終了");
+            Console.WriteLine("all send process finish");
+
+            Environment.Exit(0);
+            Console.WriteLine("OnDisconnect");
+            Server.Dispose();
         }
-
     }
+
 
     static void Server_OnDisconnet(object sender, EventArgs e)
     {
+        Environment.Exit(0);
         Console.WriteLine("OnDisconnect");
-    }
+        Server.Dispose();
 
+    }
 }
 
 public class ReciveEventArgs : EventArgs

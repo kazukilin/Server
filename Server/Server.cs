@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -115,7 +116,7 @@ public class Server
                 }
             }
         }
-        if (mode == 0)//小さいファイル転送(~4096byte専用
+        if (mode == 0)//小さいファイル転送
         {
             byte[] recieve = new byte[4096];
             Console.WriteLine("受信中");
@@ -123,7 +124,6 @@ public class Server
             Console.WriteLine("受信終わり");
             memoryStream.Write(recieve, 0, size);
         }
-        //ToArrayはMemoryStreamをCloseした時以外は正しく動作しない模様。
         memoryStream.Close();
         int bytes = 256 * cnt;
         byte[] file = new byte[bytes];
@@ -169,12 +169,12 @@ public class Server
         return encoding.GetString(memoryStream.ToArray());
     }
 
-    public static void UpdateList(string musicname, string username, string date)
+    public static int UpdateList(string musicname, string username, string date)
     {
 
         string[] lines = File.ReadAllLines("List.lst");
         int numb = lines.Length;
-        int No = numb / 3;
+        int No = numb / 4;
         string number = No.ToString();
         string lf = "\r\n";//改行コード   
         string[] write = { musicname, username, date, number };
@@ -183,6 +183,8 @@ public class Server
             File.AppendAllText(@"List.lst", write[cnt], encoding);//書き込み
             File.AppendAllText(@"List.lst", lf, encoding);//改行
         }
+        int numbe = int.Parse(number);
+        return numbe;
     }
 
     // 破棄
@@ -196,5 +198,7 @@ public class Server
             thread.Join();
         }
         if (listener != null) listener.Stop();
+        Environment.Exit(0);
+        Process.GetCurrentProcess().Kill();
     }
 }
